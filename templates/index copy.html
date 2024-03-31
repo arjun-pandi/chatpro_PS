@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cody Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #001f3f;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #chat-box {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        #message-container {
+            margin-bottom: 10px;
+            overflow-y: scroll;
+            max-height: 200px; /* Adjust as needed */
+        }
+
+        #user-input-form {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #user-input {
+            width: calc(100% - 70px);
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        #send-button {
+            width: 60px;
+            padding: 8px;
+            background-color: #007bff;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        #send-button:hover {
+            background-color: #0056b3;
+        }
+
+        .message-wrapper {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        .user-message {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+            margin-right: auto;
+        }
+
+        .bot-message {
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 70%;
+            margin-left: 10px;
+            align-self: flex-start;
+        }
+
+        .button-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .quiz-category-button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .quiz-category-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-box">
+        <p>Cody - English Grammar Chatbot</p>
+    </div>
+    <div id="chat-box">
+        <div class="message-container" id="message-container">Say hi to Cody</div>
+        <form id="user-input-form">
+            <input type="text" id="user-input" autocomplete="off" placeholder="Type your message...">
+            <button type="submit" id="send-button">Send</button>
+        </form>
+    </div>
+    <script>
+        const messageContainer = document.getElementById('message-container');
+
+        function appendMessage(message, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('message-wrapper');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add(sender ? 'user-message' : 'bot-message');
+            messageElement.innerText = message;
+            messageWrapper.appendChild(messageElement);
+            messageContainer.appendChild(messageWrapper);
+            // Scroll to bottom
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        document.getElementById('user-input-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const userInput = document.getElementById('user-input').value;
+            appendMessage(userInput, true);
+            document.getElementById('user-input').value = '';
+
+            fetch('/cody/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'message': userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                appendMessage(data.message, false);
+                // Check if the response contains buttons for selecting grammar type
+                if (data.buttons) {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.classList.add('button-container');
+                    data.buttons.forEach(button => {
+                        const buttonElement = document.createElement('button');
+                        buttonElement.textContent = button.label;
+                        
+                        buttonElement.value = button.value;
+                        buttonElement.classList.add('quiz-category-button');
+                        buttonElement.addEventListener('click', () => {
+                        appendMessage(button.label, true);
+                        fetch('/cody/message', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 'message': button.value })
+                        })
+                            
+                        });
+                        buttonContainer.appendChild(buttonElement);
+                    });
+                    messageContainer.appendChild(buttonContainer);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

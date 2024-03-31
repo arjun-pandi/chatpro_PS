@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cody Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+    
+    <div class="row">
+        <i class="fas fa-h1    ">Cody - English Grammar Chatbot</i>
+    </div>
+    <div id="chat-box">
+        <p>Cody - English Grammar Chatbot</p>
+    </div>
+    <div id="chat-box">
+        <div class="message-container" id="message-container">Say hi to Cody</div>
+        <form id="user-input-form">
+            <input type="text" id="user-input" autocomplete="off" placeholder="Type your message...">
+            <button type="submit" id="send-button">Send</button>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+    <script>
+        
+        const messageContainer = document.getElementById('message-container');
+
+        function appendMessage(message, sender) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.classList.add('message-wrapper');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add(sender ? 'user-message' : 'bot-message');
+            messageElement.innerText = message;
+            messageWrapper.appendChild(messageElement);
+            messageContainer.appendChild(messageWrapper);
+            // Scroll to bottom
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+
+        document.getElementById('user-input-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const userInput = document.getElementById('user-input').value;
+            appendMessage(userInput, true);
+            document.getElementById('user-input').value = '';
+
+            fetch('/cody/message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 'message': userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                appendMessage(data.message, false);
+                // Check if the response contains buttons for selecting grammar type
+                if (data.buttons) {
+                    const buttonContainer = document.createElement('div');
+                    buttonContainer.classList.add('button-container');
+                    data.buttons.forEach(button => {
+                        const buttonElement = document.createElement('button');
+                        buttonElement.textContent = button.label;
+                        
+                        buttonElement.value = button.value;
+                        buttonElement.classList.add('quiz-category-button');
+                        buttonElement.addEventListener('click', () => {
+                        appendMessage(button.label, true);
+                        fetch('/cody/message', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 'message': button.value })
+                        })
+                            
+                        });
+                        buttonContainer.appendChild(buttonElement);
+                    });
+                    messageContainer.appendChild(buttonContainer);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
